@@ -33,7 +33,8 @@ with open(os.path.join(exp_dir, "cfg.json")) as f:
     exp_cfg = json.load(f)
 resize_shape = tuple(exp_cfg['dataset']['resize_shape'])
 
-device = torch.device(exp_cfg['device'])
+#device = torch.device(exp_cfg['device'])
+device = torch.device("cpu")
 tensorboard = TensorBoard(exp_dir)
 
 # ------------ train data ------------
@@ -179,7 +180,7 @@ def val(epoch):
                 for b in range(len(img)):
                     img_name = sample['img_name'][b]
                     img = cv2.imread(img_name) # BGR
-                    img = cv2.resize(img, (800, 288))
+                    img = cv2.resize(img, (296, 296))
 
                     bin_seg_img = np.zeros_like(img)
                     bin_seg_img[bin_seg_pred[b]==1] = [0, 0, 255]
@@ -242,7 +243,7 @@ def main():
     else:
         start_epoch = 0
 
-    for epoch in range(start_epoch, 100):
+    for epoch in range(start_epoch, 3):
         train(epoch)
         if epoch % 2 == 0:
             print("\nValidation For Experiment: ", exp_dir)

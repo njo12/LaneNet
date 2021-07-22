@@ -98,10 +98,11 @@ class LaneNet(nn.Module):
         output = {
             "embedding": embedding,
             "binary_seg": binary_seg,
-            "loss_seg": seg_loss,
-            "loss_var": var_loss,
-            "loss_dist": dist_loss,
-            "loss": loss
+            "seg_loss": seg_loss,
+            "var_loss": var_loss,
+            "dist_loss": dist_loss,
+            "loss": loss,
+            "reg_loss": reg_loss
         }
 
         return output
