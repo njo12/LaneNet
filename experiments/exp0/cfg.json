@@ -3,7 +3,7 @@
   {
     "resize_shape":[296,296],
     "dataset_name":"Tusimple",
-    "batch_size":1
+    "batch_size":16
   },
   "device":0,
   "model":{},

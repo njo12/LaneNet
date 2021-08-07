@@ -19,7 +19,7 @@ from utils.postprocess import embedding_post_process
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--exp_dir", type=str, default="./experiments/exp0")
+    parser.add_argument("--exp_dir", type=str, default="./experiments/exp1")
     parser.add_argument("--resume", "-r", action="store_true")
     args = parser.parse_args()
     return args
@@ -117,6 +117,7 @@ def train(epoch):
         tensorboard.scalar_summary("train_loss_var", train_loss_var, epoch)
         tensorboard.scalar_summary("train_loss_dist", train_loss_dist, epoch)
         tensorboard.scalar_summary("train_loss_reg", train_loss_reg, epoch)
+        tensorboard.scalar_summary("learning_rate", lr_scheduler.get_lr()[0],epoch)
 
     progressbar.close()
     tensorboard.writer.flush()
@@ -243,7 +244,7 @@ def main():
     else:
         start_epoch = 0
 
-    for epoch in range(start_epoch, 3):
+    for epoch in range(start_epoch, 12):
         train(epoch)
         if epoch % 2 == 0:
             print("\nValidation For Experiment: ", exp_dir)
