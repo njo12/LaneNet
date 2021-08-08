@@ -1,5 +1,10 @@
 .idea/
 __pycache__/
+<<<<<<< HEAD
 */__pycache__/
 experiments/*
+=======
+experiments/*
+!experiments/sota/exp0_best.pth
+>>>>>>> 3c63ee0ba61d79124597a935d174f3cf5c32d851
 config.py
