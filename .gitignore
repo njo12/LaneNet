@@ -1,5 +1,5 @@
 .idea/
 __pycache__/
-experiments/
-!experiments/sota/
+experiments/*
+!experiments/sota/exp0_best.pth
 config.py
