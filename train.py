@@ -16,10 +16,9 @@ from utils.transforms import *
 from utils.lr_scheduler import PolyLR
 from utils.postprocess import embedding_post_process
 
-
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--exp_dir", type=str, default="./experiments/exp1")
+    parser.add_argument("--exp_dir", type=str, default="./experiments/exp0")
     parser.add_argument("--resume", "-r", action="store_true")
     args = parser.parse_args()
     return args
@@ -31,10 +30,17 @@ exp_name = exp_dir.split('/')[-1]
 
 with open(os.path.join(exp_dir, "cfg.json")) as f:
     exp_cfg = json.load(f)
+
 resize_shape = tuple(exp_cfg['dataset']['resize_shape'])
 
-#device = torch.device(exp_cfg['device'])
-device = torch.device("cpu")
+if torch.cuda.is_available():
+    print("cuda is available, using 'cuda:0' for training...")
+    torch.cuda.empty_cache()
+    device = torch.device("cuda:0")
+else:
+    print("cuda not available, using cpu for training...")
+    device = torch.device("cpu")
+
 tensorboard = TensorBoard(exp_dir)
 
 # ------------ train data ------------
@@ -49,23 +55,23 @@ transform_train = Compose(Resize(resize_shape), Darkness(5), Rotation(2),
 dataset_name = exp_cfg['dataset'].pop('dataset_name')
 Dataset_Type = getattr(dataset, dataset_name)
 train_dataset = Dataset_Type(Dataset_Path[dataset_name], "train", transform_train)
-train_loader = DataLoader(train_dataset, batch_size=exp_cfg['dataset']['batch_size'], shuffle=True, collate_fn=train_dataset.collate, num_workers=8)
+train_loader = DataLoader(train_dataset, batch_size=exp_cfg['dataset']['batch_size'], shuffle=True, collate_fn=train_dataset.collate)
 
 # ------------ val data ------------
 transform_val = Compose(Resize(resize_shape), ToTensor(),
                         Normalize(mean=mean, std=std))
 val_dataset = Dataset_Type(Dataset_Path[dataset_name], "val", transform_val)
-val_loader = DataLoader(val_dataset, batch_size=8, collate_fn=val_dataset.collate, num_workers=4)
+val_loader = DataLoader(val_dataset, batch_size=8, collate_fn=val_dataset.collate)
 
 # ------------ preparation ------------
-net = LaneNet(pretrained=True, **exp_cfg['model'])
+net = LaneNet(pretrained=True)
 net = net.to(device)
-net = torch.nn.DataParallel(net)
+# we don't need this since we don't have multiple GPUs
+# net = torch.nn.DataParallel(net)
 
 optimizer = optim.SGD(net.parameters(), **exp_cfg['optim'])
 lr_scheduler = PolyLR(optimizer, 0.9, exp_cfg['MAX_ITER'])
 best_val_loss = 1e6
-
 
 def train(epoch):
     print("Train Epoch: {}".format(epoch))
@@ -80,9 +86,11 @@ def train(epoch):
 
     for batch_idx, sample in enumerate(train_loader):
         img = sample['img'].to(device)
+
         segLabel = sample['segLabel'].to(device)
 
         optimizer.zero_grad()
+
         output = net(img, segLabel)
         embedding = output['embedding']
         binary_seg = output['binary_seg']
@@ -102,7 +110,6 @@ def train(epoch):
         optimizer.step()
         lr_scheduler.step()
 
-        iter_idx = epoch * len(train_loader) + batch_idx
         train_loss += loss.item()
         train_loss_bin_seg += seg_loss.item()
         train_loss_var += var_loss.item()
@@ -111,13 +118,12 @@ def train(epoch):
         progressbar.set_description("batch loss: {:.3f}".format(loss.item()))
         progressbar.update(1)
 
-        lr = optimizer.param_groups[0]['lr']
-        tensorboard.scalar_summary("train_loss", train_loss, epoch)
-        tensorboard.scalar_summary("train_loss_bin_seg", train_loss_bin_seg, epoch)
-        tensorboard.scalar_summary("train_loss_var", train_loss_var, epoch)
-        tensorboard.scalar_summary("train_loss_dist", train_loss_dist, epoch)
-        tensorboard.scalar_summary("train_loss_reg", train_loss_reg, epoch)
-        tensorboard.scalar_summary("learning_rate", lr_scheduler.get_lr()[0],epoch)
+    tensorboard.scalar_summary("train_loss", train_loss, epoch)
+    tensorboard.scalar_summary("train_loss_bin_seg", train_loss_bin_seg, epoch)
+    tensorboard.scalar_summary("train_loss_var", train_loss_var, epoch)
+    tensorboard.scalar_summary("train_loss_dist", train_loss_dist, epoch)
+    tensorboard.scalar_summary("train_loss_reg", train_loss_reg, epoch)
+    tensorboard.scalar_summary("learning_rate", lr_scheduler.get_lr()[0],epoch)
 
     progressbar.close()
     tensorboard.writer.flush()
@@ -171,7 +177,7 @@ def val(epoch):
 
             # visualize validation every 5 frame, 50 frames in all
             gap_num = 5
-            if batch_idx%gap_num == 0 and batch_idx < 50 * gap_num:
+            if batch_idx % gap_num == 0 and batch_idx < 50 * gap_num:
                 color = np.array([[255, 125, 0], [0, 255, 0], [0, 0, 255], [0, 255, 255]], dtype='uint8') # bgr
                 display_imgs = []
                 embedding = embedding.detach().cpu().numpy()
@@ -181,7 +187,7 @@ def val(epoch):
                 for b in range(len(img)):
                     img_name = sample['img_name'][b]
                     img = cv2.imread(img_name) # BGR
-                    img = cv2.resize(img, (296, 296))
+                    img = cv2.resize(img, exp_cfg["dataset"]["resize_shape"])
 
                     bin_seg_img = np.zeros_like(img)
                     bin_seg_img[bin_seg_pred[b]==1] = [0, 0, 255]
@@ -244,7 +250,7 @@ def main():
     else:
         start_epoch = 0
 
-    for epoch in range(start_epoch, 12):
+    for epoch in range(start_epoch, 50):
         train(epoch)
         if epoch % 2 == 0:
             print("\nValidation For Experiment: ", exp_dir)

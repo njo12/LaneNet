@@ -24,7 +24,7 @@ def main():
     _set = "IMAGENET"
     mean = IMG_MEAN[_set]
     std = IMG_STD[_set]
-    transform_img = Resize((800, 288))
+    transform_img = Resize((296, 296))
     transform_x = Compose(ToTensor(), Normalize(mean=mean, std=std))
     transform = Compose(transform_img, transform_x)
 

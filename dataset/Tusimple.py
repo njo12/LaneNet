@@ -35,6 +35,7 @@ class Tusimple(Dataset):
         self.segLabel_list = []
 
         listfile = os.path.join(self.data_dir_path, "seg_label", "list", "{}_gt.txt".format(self.image_set))
+        print(listfile)
         if not os.path.exists(listfile):
             raise FileNotFoundError("List file doesn't exist. Label has to be generated! ...")
 
@@ -81,18 +82,18 @@ class Tusimple(Dataset):
                     for line in infile:
                         outfile.write(line)
 
-        with open(os.path.join(save_dir, "test.json"), "w") as outfile:
-            for json_name in self.TEST_SET:
-                with open(os.path.join(self.data_dir_path, json_name)) as infile:
-                    for line in infile:
-                        outfile.write(line)
+        # with open(os.path.join(save_dir, "test.json"), "w") as outfile:
+        #     for json_name in self.TEST_SET:
+        #         with open(os.path.join(self.data_dir_path, json_name)) as infile:
+        #             for line in infile:
+        #                 outfile.write(line)
 
         self._gen_label_for_json('train')
         print("train set is done")
         self._gen_label_for_json('val')
         print("val set is done")
-        self._gen_label_for_json('test')
-        print("test set is done")
+        # self._gen_label_for_json('test')
+        # print("test set is done")
 
     def _gen_label_for_json(self, image_set):
         H, W = 720, 1280

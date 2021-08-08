@@ -1,6 +1,6 @@
 Dataset_Path = dict(
     CULane = "/home/lion/Dataset/CULane/data/CULane",
-    Tusimple = "C:/Users/natha/Desktop/lanenet/Tusimple_path"
+    Tusimple = "H:/TooSimple/train_set"
 )
 
 Img_Size = dict(
@@ -12,6 +12,7 @@ IMG_MEAN = dict(
     IMAGENET=(0.485, 0.456, 0.406),
     CULane=(0.36192531, 0.3675953, 0.36898042)
 )
+
 IMG_STD = dict(
     IMAGENET=(0.229, 0.224, 0.225),
     CULane=(0.28024873, 0.29112347, 0.3054787)

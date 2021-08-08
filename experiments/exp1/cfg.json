@@ -5,7 +5,7 @@
     "dataset_name":"Tusimple",
     "batch_size":16
   },
-  "device":0,
+  "device":"cuda:0",
   "model":{},
   "optim":
   {
